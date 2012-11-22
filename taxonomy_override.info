@@ -1,0 +1,6 @@
+name = Taxonomy Override
+description = Provides developer tools to override taxonomy default page.
+core = 7.x
+package = G-nova
+
+files[] = taxonomy_override.module

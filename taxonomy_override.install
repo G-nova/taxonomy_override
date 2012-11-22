@@ -1,0 +1,30 @@
+<?php
+
+function taxonomy_override_schema() {
+  $schema['taxonomy_override'] = array(
+    'description' => 'Association between vocabularies and callbacks.',
+    'fields' => array(
+      'taoid' => array(
+        'description' => 'Association ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+      'machine_name' => array(
+        'description' => 'Vocabulary machine name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      ),
+      'callback_function' => array(
+        'description' => 'Callback associated with vocabulary, that will handle taxonomy term\'s display',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('taoid')
+  );
+
+  return $schema;
+}
