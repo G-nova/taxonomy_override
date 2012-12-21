@@ -5,12 +5,11 @@ module_load_include('inc', 'taxonomy_override', 'taxonomy_override.queries');
  * Overrides taxonomy default callback.
  */
 function taxonomy_override_menu_alter(&$items) {
-  $items['taxonomy/term/%taxonomy_term']['page callback']    = '_taxonomy_override_taxonomy_override_pages';
+  $items['taxonomy/term/%']['page callback']    = '_taxonomy_override_taxonomy_override_pages';
+  $items['taxonomy/term/%']['page arguments']    = array(2);
   // Optional
-  $items['taxonomy/term/%taxonomy_term']['title callback'] = '_taxonomy_override_taxonomy_override_title';
-  $items['taxonomy/term/%taxonomy_term']['file'] = 'taxonomy_override.module';
-  $items['taxonomy/term/%taxonomy_term']['module'] = 'taxonomy_override';
-  $items['taxonomy/term/%taxonomy_term']['access arguments'] = array('access content');
+  $items['taxonomy/term/%']['access callback'] = 'user_access';
+  $items['taxonomy/term/%']['access arguments'] = array('access content');
 }
 
 /**
@@ -24,12 +23,12 @@ function _taxonomy_override_taxonomy_override_pages($tid = '') {
   if (is_object($tid)) {
     $tid = $tid->tid;
   }
-  $term = taxonomy_term_load($tid);
-  $vocabulary = taxonomy_vocabulary_load($term->vid);
+  $term = taxonomy_get_term($tid);
   /*
    * Retrieve eventually associated callback with machine name.
    */
-  $association = _taxonomy_override_get_association_by_machine_name($vocabulary->machine_name);
+
+  $association = _taxonomy_override_get_association_by_vid($term->vid);
   if (!empty($association) && $association['callback_function']) {
     $callback = $association['callback_function'];
     if (function_exists($callback)) {
@@ -55,15 +54,7 @@ function _taxonomy_override_taxonomy_override_pages($tid = '') {
    * No specific behavior : we load classic taxonomy page view.
    */
   module_load_include('inc','taxonomy','taxonomy.pages');
-  return taxonomy_term_page($term);
-}
-
-/*
- * Optional title overriding.
- */
-function _taxonomy_override_taxonomy_override_title($term) {
-  return function_exists('i18n_taxonomy_term_name') ?
-  i18n_taxonomy_term_name($term) : taxonomy_term_title($term);
+  return taxonomy_term_page($tid);
 }
 
 /**
@@ -84,25 +75,28 @@ function taxonomy_override_form_alter(&$form, &$form_state, $form_id) {
     if (isset($form_state['confirm_delete']) && isset($form_state['values']['vid'])) {
       return;
     }
-    $form['taxonomy_override'] = array(
-      '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#title' => t('Taxonomy Override'),
-      '#weight' => 15
-    );
     $availableCallbacks = taxonomy_override_get_available_callbacks();
-    $availableCallbacks = array_combine($availableCallbacks, $availableCallbacks);
-    $currentMachineName = $form['machine_name']['#default_value'];
-    $currentAssociation = _taxonomy_override_get_association_by_machine_name($currentMachineName);
-    array_unshift($availableCallbacks, t('-Default-'));
-    $form['taxonomy_override'] = array(
-      '#type' => 'select',
-      '#options' => $availableCallbacks,
-      '#title' => t('Callback display to use')
-    );
-    if (!empty($currentAssociation) && $currentAssociation['callback_function']) {
-      $form['taxonomy_override']['#default_value'] = $currentAssociation['callback_function'];
+    if(!empty($availableCallbacks)) {
+      $form['taxonomy_override'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#title' => t('Taxonomy Override'),
+        '#weight' => 15
+      );
+
+      $availableCallbacks = array_combine($availableCallbacks, $availableCallbacks);
+      $currentVid = $form['vid']['#value'];
+      $currentAssociation = _taxonomy_override_get_association_by_vid($currentVid);
+      array_unshift($availableCallbacks, t('-Default-'));
+      $form['taxonomy_override'] = array(
+        '#type' => 'select',
+        '#options' => $availableCallbacks,
+        '#title' => t('Callback display to use')
+      );
+      if (!empty($currentAssociation) && $currentAssociation['callback_function']) {
+        $form['taxonomy_override']['#default_value'] = $currentAssociation['callback_function'];
+      }
     }
     $form['#submit'][] = '_taxonomy_override_vocabulary_form_submit';
   }
@@ -114,8 +108,8 @@ function taxonomy_override_form_alter(&$form, &$form_state, $form_id) {
  */
 function _taxonomy_override_vocabulary_form_submit($form, &$form_state) {
   $callback = $form_state['values']['taxonomy_override'];
-  $machine_name = $form_state['values']['machine_name'];
-  $oldAssoc = _taxonomy_override_get_association_by_machine_name($machine_name);
+  $vid = $form_state['values']['vid'];
+  $oldAssoc = _taxonomy_override_get_association_by_vid($vid);
   if ((!$callback && empty($oldAssoc)) || $oldAssoc['callback_function'] == $callback) {
     return;
   }
@@ -125,17 +119,17 @@ function _taxonomy_override_vocabulary_form_submit($form, &$form_state) {
    */
   if ($callback) {
     if (empty($oldAssoc)) {
-      _taxonomy_override_add_association($machine_name, $callback);
+      _taxonomy_override_add_association($vid, $callback);
     }
     else {
-      _taxonomy_override_update_association($machine_name, $callback);
+      _taxonomy_override_update_association($vid, $callback);
     }
   }
   else {
     /*
      * Callback 0 => Default value => We delete the association.
      */
-    _taxonomy_overide_delete_association_by_machine_name($machine_name);
+    _taxonomy_overide_delete_association_by_vid($vid);
   }
 }
 
@@ -143,5 +137,5 @@ function _taxonomy_override_vocabulary_form_submit($form, &$form_state) {
  * Implements hook_taxonomy_vocabulary_delete().
  */
 function taxonomy_override_taxonomy_vocabulary_delete($vocabulary) {
-  _taxonomy_overide_delete_association_by_machine_name($vocabulary->machine_name);
+  _taxonomy_overide_delete_association_by_vid($vocabulary->vid);
 }

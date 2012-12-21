@@ -10,8 +10,8 @@ function taxonomy_override_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE
       ),
-      'machine_name' => array(
-        'description' => 'Vocabulary machine name.',
+      'vid' => array(
+        'description' => 'Vocabulary id.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE
@@ -27,4 +27,18 @@ function taxonomy_override_schema() {
   );
 
   return $schema;
+}
+
+
+function taxonomy_override_install() {
+  drupal_install_schema('taxonomy_override');
+  // Set module weight for it to run after core modules
+  db_query("UPDATE {system} SET weight = 11 WHERE name = 'taxonomy_override' AND type = 'module'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxonomy_override_uninstall() {
+  drupal_uninstall_schema('taxonomy_override');
 }
