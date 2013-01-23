@@ -20,20 +20,18 @@ function taxonomy_override_menu_alter(&$items) {
  *
  * @param $term Term concerned by page display.
  */
-function _taxonomy_override_taxonomy_override_pages($tid = '') {
-  if (is_object($tid)) {
-    $tid = $tid->tid;
-  }
-  $term = taxonomy_term_load($tid);
+function _taxonomy_override_taxonomy_override_pages($term) {
+
   $vocabulary = taxonomy_vocabulary_load($term->vid);
   /*
    * Retrieve eventually associated callback with machine name.
    */
   $association = _taxonomy_override_get_association_by_machine_name($vocabulary->machine_name);
+
   if (!empty($association) && $association['callback_function']) {
     $callback = $association['callback_function'];
     if (function_exists($callback)) {
-      $out = $callback($tid);
+      $out = $callback($term);
       if ($out) {
         if (module_exists('context')) {
           // Fire Context behavior if Context is enabled.
@@ -92,7 +90,6 @@ function taxonomy_override_form_alter(&$form, &$form_state, $form_id) {
       '#weight' => 15
     );
     $availableCallbacks = taxonomy_override_get_available_callbacks();
-    $availableCallbacks = array_combine($availableCallbacks, $availableCallbacks);
     $currentMachineName = $form['machine_name']['#default_value'];
     $currentAssociation = _taxonomy_override_get_association_by_machine_name($currentMachineName);
     array_unshift($availableCallbacks, t('-Default-'));
