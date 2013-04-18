@@ -1,4 +1,11 @@
 <?php
+/**
+ * @file
+ * API for taxonomy_override module.
+ *
+ * taxonomy_override can't work out of the box.
+ * You need to implements hooks on your own module.
+ */
 
 /**
  * Function hook_taxonomy_override_define_callback

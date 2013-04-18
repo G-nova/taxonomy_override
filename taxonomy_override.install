@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * taxonomy_override install file.
+ */
 
 /**
  * Implements hook_install().

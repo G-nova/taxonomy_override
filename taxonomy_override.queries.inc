@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * taxonomy_override queries used in module
+ */
 
 function _taxonomy_override_get_association_by_machine_name($machine_name) {
   $callback = &drupal_static(__FUNCTION__);

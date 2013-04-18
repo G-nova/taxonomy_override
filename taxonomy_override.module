@@ -1,4 +1,12 @@
 <?php
+/**
+ * @file
+ * taxonomy_override module
+ *
+ * Override taxonomy term pages.
+ * Read api to use this module
+ */
+
 module_load_include('inc', 'taxonomy_override', 'taxonomy_override.queries');
 
 /*
